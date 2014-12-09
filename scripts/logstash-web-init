@@ -1,0 +1,72 @@
+#! /bin/sh
+
+# From The Logstash Book
+# The original of this file can be found at: http://logstashbook.com/code/index.html
+#
+
+### BEGIN INIT INFO
+# Provides:          logstash
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start daemon at boot time
+# Description:       Enable service provided by daemon.
+### END INIT INFO
+
+. /etc/init.d/functions
+
+name="logstash-web"
+logstash_bin="/opt/logstash/bin/logstash"
+pidfile="/var/run/$name.pid"
+cwd=`pwd`
+
+rh_start () {
+    command="${logstash_bin} web"
+    echo -n "Starting $name"
+    daemon --pidfile "$pidfile" "$command &>/dev/null & echo \$! > $pidfile"
+    retval=$?
+    echo 
+    return $retval
+}
+
+rh_stop () {
+    echo -n $"Stopping $prog: "
+    killproc -p $pidfile $prog
+    retval=$?
+    echo
+    return $retval
+}
+
+rh_status () {
+    status -p $pidfile "$name"
+}
+
+case $1 in
+        start)
+                if status; then exit 0; fi
+                rh_start
+                ;;
+        stop)
+                rh_stop
+                ;;
+        reload)
+                rh_stop
+                sleep 2
+                rh_start
+                ;;
+        restart)
+                rh_stop
+                sleep 2
+                rh_start
+                ;;
+        status)
+                rh_status && exit 0 || exit $?
+                ;;
+        *)
+                echo "Usage: $0 {start|stop|restart|reload|status}"
+                exit 1
+                ;;
+esac
+
+exit 0
