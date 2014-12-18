@@ -32,8 +32,8 @@ def query_range(es):
                         'query': {
                             'range': {
                                 '@timestamp': {
-                                    'from':'2014-12-11',
-                                    'to': '2014-12-11'
+                                    'from':'2014-12-16',
+                                    'to': '2014-12-17'
                                 }
                             },
                         },
@@ -89,6 +89,43 @@ def query_script_field(es):
                     })
 
 
+# Don't understand how to use this...
+def query_data_field(es):
+    return es.search(body={
+                        'fielddata_fields': ['test1', 'test2'],
+                        'query': {
+                            'term': { 'type': 'syslog' }
+                        }
+                    })
+
+
+def post_filter(es):
+    return es.search(body={
+                        'query': {
+                            "filtered": {
+                                "filter": {
+                                    "bool": {
+                                        "must": [
+                                            { "term": { "host": "192.168.145.129"   }},
+                                            { "term": { "severity": "6" }}
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    })
+
+
+def highlight(es):
+    return es.search(body={
+                        'highlight': {
+                            'fields': { 'host': {} }
+                        },
+                        'query': {
+                            'term': { 'type': 'syslog' }
+                        }
+                    })
+
 
 
 
@@ -97,12 +134,15 @@ tracer.setLevel(logging.INFO)
 tracer.addHandler(logging.FileHandler('es_trace.log'))
 tracer.propagate = False
 
-es = Elasticsearch(['http://192.168.145.132:9200'])
+es = Elasticsearch(['http://192.168.145.147:9200'])
 #info(es)
 #print_hits(empty_search(es))
-#print_hits(query_range(es))
+print_hits(query_range(es))
 #print_hits(basic_query(es))
 #print_hits(query_with_from_and_size(es))
 #print_hits(query_sort(es))
 #print_hits(query_field(es))
 #print_hits(query_script_field(es))
+#print_hits(query_data_field(es))
+#print_hits(post_filter(es))
+#print_hits(highlight(es))
