@@ -32,8 +32,10 @@ def query_range(es):
                         'query': {
                             'range': {
                                 '@timestamp': {
-                                    'from':'2014-12-16',
-                                    'to': '2014-12-17'
+                                    #'from': '2014-12-23',
+                                    #'to': '2014-12-23'
+                                    'from':'2014-12-23T16:19:00+08',
+                                    'to': '2014-12-23T17:19:00+08'
                                 }
                             },
                         },
@@ -126,7 +128,40 @@ def highlight(es):
                         }
                     })
 
-
+def collectd_01(es):
+    return es.search(body={
+                        "fields": ["@timestamp", "type_instance", "value"],
+                        "query": {
+                            "filtered": {
+                                "query": {
+                                    "bool": {
+                                        "should": [
+                                            { "query_string": { "query": "collectd_type: cpu" } }
+                                        ]
+                                    }
+                                },
+                                "filter": {
+                                    "bool": {
+                                        "must": [
+                                            { "range": {
+                                                    "@timestamp": {
+                                                        "from": "2014-12-20T17:29:00+08",
+                                                        "to": "2014-12-24T17:34:00+08"
+                                                    }
+                                                }
+                                            },
+                                            { "terms": { "_type": [ "collectd" ] } },
+                                            { "terms": { "host": [ "logclient" ] } }
+                                        ]
+                                    },
+                                }
+                            }
+                        }, 
+                        "size": 50,
+                        "sort": [
+                            {"@timestamp": {"order": "desc"}}
+                        ],
+                    })
 
 
 tracer = logging.getLogger('elasticsearch.trace')
@@ -134,10 +169,10 @@ tracer.setLevel(logging.INFO)
 tracer.addHandler(logging.FileHandler('es_trace.log'))
 tracer.propagate = False
 
-es = Elasticsearch(['http://192.168.145.147:9200'])
+es = Elasticsearch(['http://192.168.145.152:9200'])
 #info(es)
 #print_hits(empty_search(es))
-print_hits(query_range(es))
+#print_hits(query_range(es))
 #print_hits(basic_query(es))
 #print_hits(query_with_from_and_size(es))
 #print_hits(query_sort(es))
@@ -146,3 +181,4 @@ print_hits(query_range(es))
 #print_hits(query_data_field(es))
 #print_hits(post_filter(es))
 #print_hits(highlight(es))
+print_hits(collectd_01(es))
