@@ -136,7 +136,7 @@ def collectd_01(es):
                                 "query": {
                                     "bool": {
                                         "should": [
-                                            { "query_string": { "query": "collectd_type: cpu" } }
+                                            { "query_string": { "query": "collectd_type:cpu AND type_instance:system" } },
                                         ]
                                     }
                                 },
@@ -157,11 +157,63 @@ def collectd_01(es):
                                 }
                             }
                         }, 
-                        "size": 50,
+                        "size": 5,
                         "sort": [
                             {"@timestamp": {"order": "desc"}}
                         ],
                     })
+
+
+def collectd_02(es):
+    return es.search(body={
+                        "facets": {
+                            "17": {
+                                "date_histogram": {
+                                    "key_field": "@timestamp",
+                                    "value_field": "value",
+                                    "interval": "1h"
+                                },
+                                "global": "true",
+                                "facet_filter": {
+                                    "fquery": {
+                                        "query": {
+                                            "filtered": {
+                                                "query": {
+                                                    "query_string": {
+                                                        "query": "plugin:\"cpu\" AND plugin_instance:\"0\" AND type_instance:\"idle\""
+                                                    }
+                                                },
+                                                "filter": {
+                                                    "bool": {
+                                                        "must": [
+                                                            {
+                                                                "range": {
+                                                                    "@timestamp": {
+                                                                        "from": "2014-12-24T11:29:00+08",
+                                                                        "to": "2014-12-24T17:34:00+08"
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "fquery": {
+                                                                    "query": {
+                                                                        "query_string": {
+                                                                            "query": "type:collectd AND host:logclient"
+                                                                        }
+                                                                    },
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    })
+
 
 
 tracer = logging.getLogger('elasticsearch.trace')
@@ -181,4 +233,5 @@ es = Elasticsearch(['http://192.168.145.152:9200'])
 #print_hits(query_data_field(es))
 #print_hits(post_filter(es))
 #print_hits(highlight(es))
-print_hits(collectd_01(es))
+#print_hits(collectd_01(es))
+print_hits(collectd_02(es))
