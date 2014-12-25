@@ -23,7 +23,7 @@ def _get_cpu_ids(es, host):
     return cpu_ids 
                             
 
-def search_cpu_data(es, host, ncpus, from_time="now-2m", to_time="now", interval="1m"):
+def search_cpu_data(es, host, from_time="now-2m", to_time="now", interval="1m"):
     querys = []
     cpu_ids = _get_cpu_ids(es, host) 
     
@@ -89,6 +89,23 @@ def build_es_search_body_for_cpu_data(host, cpu_id, data_type, from_time, to_tim
         "size": 0
     }
 
+def parse_cpu_search_result(results):
+    graph_data = {}
+
+    for r in results['responses']:
+        for k in r['facets'].keys():
+            graph = []
+            for item in r['facets'][k]['entries']:
+                graph.append({'date': item['time'], 
+                              'value': item['mean']})
+            graph_data[k] = graph
+
+    # 1. 时间需要处理成字符串格式的吗?
+    # 2. value需要减去前一点的
+                
+    print graph_data        
+    
+
 
 
 #tracer = logging.getLogger('elasticsearch.trace')
@@ -96,9 +113,7 @@ def build_es_search_body_for_cpu_data(host, cpu_id, data_type, from_time, to_tim
 #tracer.addHandler(logging.FileHandler('es_trace.log'))
 #tracer.propagate = False
 
-es = Elasticsearch(['http://192.168.145.152:9201'])
+es = Elasticsearch(['http://192.168.145.152:9200'])
 
-results = search_cpu_data(es, "logclient", 2)
-for r in results['responses']:
-    print r
-    print "\n"
+results = search_cpu_data(es, "logclient")
+parse_cpu_search_result(results)
