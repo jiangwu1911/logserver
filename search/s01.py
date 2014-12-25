@@ -136,7 +136,7 @@ def collectd_01(es):
                                 "query": {
                                     "bool": {
                                         "should": [
-                                            { "query_string": { "query": "collectd_type:cpu AND type_instance:system" } },
+                                            { "query_string": { "query": "collectd_type:(cpu) AND type_instance:(system)" } },
                                         ]
                                     }
                                 },
@@ -198,9 +198,10 @@ def collectd_02(es):
                                                                 "fquery": {
                                                                     "query": {
                                                                         "query_string": {
-                                                                            "query": "type:collectd AND host:logclient"
+                                                                            "query": "type:collectd AND host:\"logclient\""
                                                                         }
                                                                     },
+                                                                    "_cache": "true"
                                                                 }
                                                             }
                                                         ]
