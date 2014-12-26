@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 import logging
+from time import *
 from elasticsearch import Elasticsearch
 
 def print_hits(results, facet_masks={}):
@@ -23,7 +24,7 @@ def _get_cpu_ids(es, host):
     return cpu_ids 
                             
 
-def search_cpu_data(es, host, from_time="now-2m", to_time="now", interval="1m"):
+def search_cpu_data(es, host, from_time="now-10m", to_time="now", interval="5m"):
     querys = []
     cpu_ids = _get_cpu_ids(es, host) 
     
@@ -33,6 +34,17 @@ def search_cpu_data(es, host, from_time="now-2m", to_time="now", interval="1m"):
             querys.append({})       # Append a empty header
             querys.append(q)
     return es.msearch(body=querys)
+
+
+def get_current_time():
+    return time() 
+
+
+# 发现ES中,如果输入的时间没按interval对齐,查询出的数据不准确
+# adjust_time将时间按interval对其
+# 输入输出参数单位都是秒,注意在ES中,需要将其乘以1000使用
+def adjust_time(t, interval):
+    return int(t / interval) * interval
     
 
 def build_es_search_body_for_cpu_data(host, cpu_id, data_type, from_time, to_time, interval):
@@ -44,7 +56,7 @@ def build_es_search_body_for_cpu_data(host, cpu_id, data_type, from_time, to_tim
                 "date_histogram": {
                     "key_field": "@timestamp",
                     "value_field": "value",
-                    "interval": interval
+                    "interval": interval,
                 },
                 "global": "true",
                 "facet_filter": {
@@ -79,7 +91,7 @@ def build_es_search_body_for_cpu_data(host, cpu_id, data_type, from_time, to_tim
                                             }
                                         ]
                                     }
-                                }
+                                },
                             }
                         }
                     }
@@ -98,11 +110,22 @@ def parse_cpu_search_result(results):
             for item in r['facets'][k]['entries']:
                 graph.append({'date': item['time'], 
                               'value': item['mean']})
-            graph_data[k] = graph
-
-    # 1. 时间需要处理成字符串格式的吗?
-    # 2. value需要减去前一点的
-                
+            # 排序
+            graph.sort(lambda x,y : cmp(x['date'], y['date']))
+ 
+            # 求差值
+            new_graph = []    
+            last_point = None
+            for point in graph:
+                if last_point != None:
+                    p = {}
+                    p['date'] = strftime("%Y-%m-%d %H:%M:%S", localtime(point['date']/1000))
+                    p['value'] = (point['value'] - last_point['value']) * 1000 / \
+                                 (point['date'] - last_point['date'])
+                    new_graph.append(p)
+                last_point = point
+                    
+            graph_data[k] = new_graph
     print graph_data        
     
 
@@ -114,6 +137,9 @@ def parse_cpu_search_result(results):
 #tracer.propagate = False
 
 es = Elasticsearch(['http://192.168.145.152:9200'])
+intval = 600
+to_t = adjust_time(get_current_time(), intval)
+from_t = adjust_time(get_current_time() - 6000, intval)
 
-results = search_cpu_data(es, "logclient")
+results = search_cpu_data(es, "logclient", from_time=from_t*1000, to_time=to_t*1000, interval=intval*1000)
 parse_cpu_search_result(results)
