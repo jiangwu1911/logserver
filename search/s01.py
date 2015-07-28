@@ -26,6 +26,12 @@ def basic_query(es):
                         }
                     })
 
+def basic_query_nginx(es):
+    return es.search(body={
+                        'query': {
+                            'term': { 'type': 'nginx' }
+                        }
+                    })
 
 def query_range(es):
     return es.search(body={
@@ -215,6 +221,29 @@ def collectd_02(es):
                         }
                     })
 
+def basic_match(es):
+    return es.search(body={
+        'query': {
+            'match': {
+                'type' : 'nginx'
+            }
+        }
+    })
+
+def basic_match_and(es):
+    return es.search(body={
+        'query': {
+            'match': {
+                'message' : {
+                    "query" : "192.168.206.1 poweredby", 
+                    "operator" : "or"
+                    #"operator" : "and"
+                }
+            }
+        }
+    })
+
+
 
 
 tracer = logging.getLogger('elasticsearch.trace')
@@ -222,11 +251,12 @@ tracer.setLevel(logging.INFO)
 tracer.addHandler(logging.FileHandler('es_trace.log'))
 tracer.propagate = False
 
-es = Elasticsearch(['http://192.168.145.152:9200'])
-#info(es)
+es = Elasticsearch(['http://192.168.102.140:9200'])
+info(es)
 #print_hits(empty_search(es))
 #print_hits(query_range(es))
 #print_hits(basic_query(es))
+#print_hits(basic_query_nginx(es))
 #print_hits(query_with_from_and_size(es))
 #print_hits(query_sort(es))
 #print_hits(query_field(es))
@@ -235,4 +265,6 @@ es = Elasticsearch(['http://192.168.145.152:9200'])
 #print_hits(post_filter(es))
 #print_hits(highlight(es))
 #print_hits(collectd_01(es))
-print_hits(collectd_02(es))
+#print_hits(collectd_02(es))
+
+print_hits(basic_match_and(es))
