@@ -2,7 +2,7 @@
 
 #!/usr/bin/env python
 
-# 按时间段查询所有web日志记录, 并按客户端IP汇总
+# 按时间段查询所有web日志记录, 并按浏览器类型汇总
 
 import logging
 from elasticsearch import Elasticsearch
@@ -60,7 +60,10 @@ def aggr01(es):
                 "aggs": {
                     "3": {
                         "terms": {
-                            "field": "clientip",
+                            "file": "my_script",
+                            "params": {
+                                "my_var": "agent"
+                            },
                             "size": 20,
                             "order": {
                                 "_count": "desc"
@@ -75,6 +78,6 @@ tracer.setLevel(logging.INFO)
 tracer.addHandler(logging.FileHandler('es_trace.log'))
 tracer.propagate = False
 
-es = Elasticsearch(['http://192.168.102.140:9200'])
+es = Elasticsearch(['http://192.168.206.163:9200'])
 info(es)
 print_hits(aggr01(es))
