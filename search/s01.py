@@ -29,7 +29,10 @@ def basic_query(es):
 def basic_query_nginx(es):
     return es.search(body={
                         'query': {
-                            'term': { 'type': 'nginx' }
+                            "query_string": {
+                                "query": "type:nginx-access",
+                                "analyze_wildcard": "true"
+                            }
                         }
                     })
 
@@ -243,6 +246,19 @@ def basic_match_and(es):
         }
     })
 
+def basic_test_01(es):
+    return es.search(body={
+        'query':
+            {'filtered' :
+                {'query' :
+                    {'query_string' :
+                        {'query' : 'some query string here'}
+                    },
+                    'filter' :
+                        {'term' : { 'user' : 'kimchy' } }
+                }
+            }
+         })
 
 
 
@@ -256,6 +272,8 @@ info(es)
 #print_hits(empty_search(es))
 #print_hits(query_range(es))
 #print_hits(basic_query(es))
+print_hits(basic_test_01(es))
+#print_hits(basic_query_nginx(es))
 #print_hits(basic_query_nginx(es))
 #print_hits(query_with_from_and_size(es))
 #print_hits(query_sort(es))
@@ -267,4 +285,4 @@ info(es)
 #print_hits(collectd_01(es))
 #print_hits(collectd_02(es))
 
-print_hits(basic_match_and(es))
+#print_hits(basic_match_and(es))
