@@ -1,4 +1,8 @@
+# -*- coding: UTF-8 -*-
+
 #!/usr/bin/env python
+
+# 按时间段查询所有web日志记录, 统计结果每10分钟做一个汇总
 
 import logging
 from elasticsearch import Elasticsearch
@@ -17,7 +21,7 @@ def info(es):
 
 def aggr01(es):
     return es.search(body={
-                "size": 10,
+                "size": 5,
                 "query": {
                     "filtered": {
                         "query": {
@@ -52,7 +56,20 @@ def aggr01(es):
                             }
                         }
                     }
-                }
+                },
+                "aggs": {
+                    "2": {
+                        "date_histogram": {
+                            "field": "@timestamp",
+                            "interval": "10m",
+                            "min_doc_count": 0,
+                            "extended_bounds": {
+                                "min": 1441123200000,
+                                "max": 1441209599999
+                            }
+                        }
+                    }
+                },
             })
 
 tracer = logging.getLogger('elasticsearch.trace')
