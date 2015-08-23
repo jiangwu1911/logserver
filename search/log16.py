@@ -2,7 +2,7 @@
 
 #!/usr/bin/env python
 
-# 按时间段查询所有web日志记录, 并按浏览器类型汇总
+# 按时间段查询所有web日志记录, 并按HTTP返回码汇总
 
 import logging
 from elasticsearch import Elasticsearch
@@ -60,10 +60,7 @@ def aggr01(es):
                 "aggs": {
                     "3": {
                         "terms": {
-                            "file": "my_script",
-                            "params": {
-                                "my_var": "agent"
-                            },
+                            "field": "agent[\"raw\"]",
                             "size": 20,
                             "order": {
                                 "_count": "desc"
